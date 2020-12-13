@@ -1,0 +1,3 @@
+domain: dg.k8s
+repo: github.com/danniel1205/explore-k8s-custom-controllers
+version: "2"
