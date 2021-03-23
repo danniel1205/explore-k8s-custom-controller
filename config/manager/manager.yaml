@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
@@ -26,8 +26,9 @@ spec:
       - command:
         - /manager
         args:
-        - --enable-leader-election
-        image: controller:latest
+        - --enable-leader-election=false
+        image: danielguo/controller:latest
+        imagePullPolicy: IfNotPresent
         name: manager
         resources:
           limits:

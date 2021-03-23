@@ -6,9 +6,10 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,20 +29,39 @@ type SecretReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=secrets/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=core,resources=secrets;pods;configmaps,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=secrets/status;pods/status;configmaps/status,verbs=get;update;patch
 
 func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	var err error
 	log := r.Log.WithValues("pod", req.NamespacedName)
 
 	pod := &corev1.Pod{}
-	if err := r.Get(ctx, req.NamespacedName, pod); err != nil {
-		log.Error(err, "unable to get pod")
-		return ctrl.Result{}, err
-	}
-
-	pod.ObjectMeta.Annotations["reconciled-from-secret"] = "true"
-	if err := r.Update(ctx, pod); err != nil {
+	if err = r.Get(ctx, req.NamespacedName, pod); err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("create pod", "namespace", req.Namespace, "name", req.Name)
+			// create pod
+			if err = r.Create(ctx, &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      req.Name,
+					Namespace: req.Namespace,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "busybox",
+							Image: "busybox",
+							Args: []string{
+								"sleep",
+								"1000000",
+							},
+						},
+					},
+				},
+			}); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -50,13 +70,15 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
-	// enqueue the pod for reconcile
-	mapFn := func(o client.Object) []reconcile.Request {
-		if o.GetAnnotations()["pod-name"] != "" {
+	// enqueue the request to reconcile Pod
+	enqueueMapFn := func(o client.Object) []reconcile.Request {
+		podName := o.GetAnnotations()["pod-name"]
+		podNamespace := o.GetNamespace()
+		if podName != "" {
 			return []reconcile.Request{
 				{NamespacedName: types.NamespacedName{
-					Name:      o.GetAnnotations()["pod-name"],
-					Namespace: o.GetNamespace(),
+					Name:      podName,
+					Namespace: podNamespace,
 				}},
 			}
 		} else {
@@ -64,9 +86,9 @@ func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		}
 	}
 
-	p := predicate.Funcs{
+	eventFilter := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			// The object doesn't contain label "foo", so the event will be
+			// If the object doesn't contain annotation "pod-name", so the event will be
 			// ignored.
 			if _, ok := e.ObjectNew.GetAnnotations()["pod-name"]; !ok {
 				return false
@@ -79,29 +101,21 @@ func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}
 			return true
 		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			if _, ok := e.Object.GetAnnotations()["pod-name"]; !ok {
+				return false
+			}
+			return true
+		},
 	}
 
-	fmt.Println("==> SetupWithManager")
-
+	// Watch on the configMap and reconcile Pods
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Watches(
-			&source.Kind{Type: &corev1.Secret{}},
-			handler.EnqueueRequestsFromMapFunc(mapFn),
+			&source.Kind{Type: &corev1.ConfigMap{}},
+			handler.EnqueueRequestsFromMapFunc(enqueueMapFn),
 			builder.OnlyMetadata).
-		WithEventFilter(p).
+		WithEventFilter(eventFilter).
 		Complete(r)
-
-	//return ctrl.NewControllerManagedBy(mgr).
-	//	For(&corev1.Secret{}, builder.OnlyMetadata).
-	//	Complete(r)
-}
-
-func containsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-	return false
 }

@@ -1,7 +1,3 @@
-/*
-
- */
-
 package main
 
 import (
@@ -56,10 +52,10 @@ func main() {
 
 	if err = (&controllers.SecretReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Secret"),
+		Log:    ctrl.Log.WithName("controllers").WithName("ConfigMap"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Secret")
+		setupLog.Error(err, "unable to create controller", "controller", "ConfigMap")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

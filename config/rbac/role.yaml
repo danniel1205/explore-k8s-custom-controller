@@ -9,6 +9,8 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  - pods
   - secrets
   verbs:
   - create
@@ -21,6 +23,8 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps/status
+  - pods/status
   - secrets/status
   verbs:
   - get
