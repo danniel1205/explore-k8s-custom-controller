@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: explore-k8s-custom-controllers
+    app.kubernetes.io/name: smarthome-controllers
     app.kubernetes.io/managed-by: kustomize
   name: diningroom-editor-role
 rules:

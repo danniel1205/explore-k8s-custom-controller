@@ -27,15 +27,15 @@ import (
 	"danielguo/smarthome/test/utils"
 )
 
-const namespace = "explore-k8s-custom-controllers-system"
+const namespace = "smarthome-controllers-system"
 
 var _ = Describe("controller", Ordered, func() {
 	BeforeAll(func() {
-		By("installing prometheus operator")
-		Expect(utils.InstallPrometheusOperator()).To(Succeed())
+		//By("installing prometheus operator")
+		//Expect(utils.InstallPrometheusOperator()).To(Succeed())
 
-		By("installing the cert-manager")
-		Expect(utils.InstallCertManager()).To(Succeed())
+		//By("installing the cert-manager")
+		//Expect(utils.InstallCertManager()).To(Succeed())
 
 		By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
@@ -43,11 +43,11 @@ var _ = Describe("controller", Ordered, func() {
 	})
 
 	AfterAll(func() {
-		By("uninstalling the Prometheus manager bundle")
-		utils.UninstallPrometheusOperator()
+		//By("uninstalling the Prometheus manager bundle")
+		//utils.UninstallPrometheusOperator()
 
-		By("uninstalling the cert-manager bundle")
-		utils.UninstallCertManager()
+		//By("uninstalling the cert-manager bundle")
+		//utils.UninstallCertManager()
 
 		By("removing manager namespace")
 		cmd := exec.Command("kubectl", "delete", "ns", namespace)
@@ -60,7 +60,7 @@ var _ = Describe("controller", Ordered, func() {
 			var err error
 
 			// projectimage stores the name of the image used in the example
-			var projectimage = "example.com/explore-k8s-custom-controllers:v0.0.1"
+			var projectimage = "example.com/smarthome-controllers:v0.0.1"
 
 			By("building the manager(Operator) image")
 			cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectimage))

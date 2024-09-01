@@ -5,7 +5,7 @@
 domain: danielguo
 layout:
 - go.kubebuilder.io/v4
-projectName: explore-k8s-custom-controllers
+projectName: smarthome-controllers
 repo: danielguo/smarthome
 resources:
 - api:

@@ -2,7 +2,7 @@ apiVersion: smarthome.danielguo/v1alpha1
 kind: DiningRoom
 metadata:
   labels:
-    app.kubernetes.io/name: explore-k8s-custom-controllers
+    app.kubernetes.io/name: smarthome-controllers
     app.kubernetes.io/managed-by: kustomize
   name: diningroom-sample
 spec:
