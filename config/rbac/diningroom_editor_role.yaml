@@ -1,8 +1,11 @@
----
+# permissions for end users to edit diningrooms.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: manager-role
+  labels:
+    app.kubernetes.io/name: explore-k8s-custom-controllers
+    app.kubernetes.io/managed-by: kustomize
+  name: diningroom-editor-role
 rules:
 - apiGroups:
   - smarthome.danielguo
@@ -19,14 +22,6 @@ rules:
 - apiGroups:
   - smarthome.danielguo
   resources:
-  - diningrooms/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - smarthome.danielguo
-  resources:
   - diningrooms/status
   verbs:
   - get
-  - patch
-  - update
